@@ -1,0 +1,431 @@
+/* ============================================================
+   site.css — NY Pension Calendar styles
+   ============================================================ */
+
+/* ── Infinite-grid landing page ─────────────────────────── */
+html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+body { user-select: none; -webkit-user-select: none; background: var(--bg, #0b0f17); }
+
+/* Let the orb layer pan with the grid; promote to compositor layer */
+.bgOrbs { will-change: transform; }
+
+/* Grid viewport — fills the screen behind everything */
+#gridViewport {
+	position: fixed; inset: 0;
+	overflow: hidden;
+	cursor: grab;
+	z-index: 0;
+	touch-action: none;
+}
+body.dragging, body.dragging * { cursor: grabbing !important; }
+
+#gridSurface {
+	position: absolute;
+	inset: -5000%;
+	will-change: transform;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 0H60V60' fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E");
+	background-size: 60px 60px;
+}
+
+#gridCursorGlow {
+	position: absolute;
+	inset: 0;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cpath d='M0 0H60V60' fill='none' stroke='%2300ffff' stroke-opacity='0.35' stroke-width='1'/%3E%3C/svg%3E");
+	background-size: 60px 60px;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity .2s;
+	-webkit-mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, transparent 70%);
+	        mask-image: radial-gradient(circle at center, rgba(0,0,0,1) 0%, transparent 70%);
+	-webkit-mask-repeat: no-repeat;
+	        mask-repeat: no-repeat;
+	-webkit-mask-size: var(--glow-diameter, 360px) var(--glow-diameter, 360px);
+	        mask-size: var(--glow-diameter, 360px) var(--glow-diameter, 360px);
+	will-change: mask-position, -webkit-mask-position;
+}
+
+#gridGlow {
+	position: absolute;
+	width: 520px; height: 520px;
+	border-radius: 50%;
+	pointer-events: none;
+	background: radial-gradient(circle, rgba(0,255,255,0.08) 0%, transparent 70%);
+	transform: translate(-50%, -50%);
+	will-change: left, top;
+}
+
+#gridOrigin {
+	position: absolute;
+	width: 24px; height: 24px;
+	transform: translate(-50%, -50%);
+	pointer-events: none;
+}
+#gridOrigin::before,
+#gridOrigin::after {
+	content: "";
+	position: absolute;
+	background: rgba(255,255,255,0.18);
+	border-radius: 1px;
+}
+#gridOrigin::before { width: 1px; height: 100%; left: 50%; top: 0; }
+#gridOrigin::after  { height: 1px; width: 100%; top: 50%; left: 0; }
+
+/* Floating content layer on top of grid */
+#gridContent {
+	position: fixed;
+	bottom: 10px; left: 50%;
+	transform: translateX(-50%);
+	display: flex; flex-direction: column;
+	pointer-events: none;
+	z-index: 1;
+}
+
+/* Coordinate readout */
+#coordPill {
+	position: fixed;
+	top: 16px; left: 50%;
+	transform: translateX(-50%);
+	font-family: monospace;
+	font-size: 0.75rem;
+	color: var(--muted, #5a6070);
+	background: rgba(11,15,23,0.55);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	border: 1px solid rgba(255,255,255,0.06);
+	padding: 4px 14px;
+	border-radius: 20px;
+	z-index: 2;
+	pointer-events: none;
+	user-select: none;
+	opacity: 0;
+	transition: opacity .25s;
+}
+#coordPill.visible { opacity: 1; }
+
+/* Tab bar sits on top */
+.tabsBar { position: relative; z-index: 3; pointer-events: auto; }
+
+/* ── Add Timer bar (top-right) ─────────────────────────── */
+#addTimerBar {
+	position: fixed;
+	top: 16px; right: 20px;
+	z-index: 10;
+	pointer-events: auto;
+}
+
+#addTimerBtn {
+	background: rgba(0,255,255,0.08);
+	border: 1px solid rgba(0,255,255,0.28);
+	color: rgba(0,255,255,0.9);
+	font-size: 0.88rem;
+	font-weight: 700;
+	padding: 8px 20px;
+	border-radius: 22px;
+	cursor: pointer;
+	transition: background .15s, box-shadow .15s;
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	letter-spacing: 0.02em;
+}
+#addTimerBtn:hover {
+	background: rgba(0,255,255,0.16);
+	box-shadow: 0 0 20px rgba(0,255,255,0.15);
+}
+
+/* ── Modal overlay ─────────────────────────────────────── */
+.modal-overlay {
+	position: fixed; inset: 0;
+	background: rgba(0,0,0,0.55);
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: auto;
+	animation: modalFadeIn 0.2s ease both;
+}
+.modal-overlay.hidden { display: none; }
+
+@keyframes modalFadeIn {
+	from { opacity: 0; }
+	to   { opacity: 1; }
+}
+
+.modal-box {
+	background: rgba(12,16,28,0.97);
+	border: 1px solid rgba(0,255,255,0.22);
+	border-radius: 22px;
+	padding: 36px 32px 28px;
+	width: 380px;
+	max-width: 92vw;
+	box-shadow: 0 0 60px rgba(0,255,255,0.12), 0 20px 60px rgba(0,0,0,0.6);
+	animation: modalBoxIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+@keyframes modalBoxIn {
+	from { opacity: 0; transform: scale(0.88); }
+	to   { opacity: 1; transform: scale(1); }
+}
+
+.modal-box h2 {
+	margin: 0 0 26px;
+	font-size: 1.25rem;
+	font-weight: 900;
+	color: #eef1f6;
+	letter-spacing: -0.01em;
+}
+
+.modal-box label {
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	font-size: 0.72rem;
+	color: rgba(0,255,255,0.6);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	margin-bottom: 18px;
+}
+
+.modal-box input {
+	background: rgba(255,255,255,0.04);
+	border: 1px solid rgba(255,255,255,0.1);
+	border-radius: 11px;
+	color: #eef1f6;
+	font-size: 0.96rem;
+	padding: 11px 14px;
+	outline: none;
+	transition: border-color .15s, box-shadow .15s;
+	width: 100%;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+.modal-box input:focus {
+	border-color: rgba(0,255,255,0.4);
+	box-shadow: 0 0 0 3px rgba(0,255,255,0.08);
+}
+.modal-box input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+	filter: invert(1) opacity(0.45);
+	cursor: pointer;
+}
+
+.modal-actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+	margin-top: 6px;
+}
+.modal-actions button {
+	padding: 10px 22px;
+	border-radius: 11px;
+	font-size: 0.88rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: background .15s;
+	font-family: inherit;
+}
+.modal-actions button:not(.primary) {
+	background: transparent;
+	border: 1px solid rgba(255,255,255,0.12);
+	color: rgba(255,255,255,0.55);
+}
+.modal-actions button:not(.primary):hover {
+	background: rgba(255,255,255,0.06);
+}
+.modal-actions button.primary {
+	background: rgba(0,255,255,0.12);
+	border: 1px solid rgba(0,255,255,0.38);
+	color: rgba(0,255,255,0.95);
+}
+.modal-actions button.primary:hover {
+	background: rgba(0,255,255,0.22);
+	box-shadow: 0 0 16px rgba(0,255,255,0.15);
+}
+
+/* ── Timer mount (on the infinite grid) ────────────────── */
+#timerMount {
+	position: absolute;
+	top: 50%; left: 50%;
+	transform: translate(-50%, -50%);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 28px;
+	justify-content: center;
+	align-items: flex-start;
+	pointer-events: none;
+	z-index: 1;
+	padding: 40px;
+	max-width: 1500px;
+}
+
+/* ── Timer card ─────────────────────────────────────────── */
+.timer-card {
+	pointer-events: auto;
+	width: min(480px, 88vw);
+	background: rgba(10,14,26,0.9);
+	backdrop-filter: blur(18px);
+	-webkit-backdrop-filter: blur(18px);
+	border: 1px solid rgba(0,255,255,0.16);
+	border-radius: 22px;
+	padding: 26px 28px 24px;
+	box-shadow:
+		0 0 50px rgba(0,255,255,0.07),
+		0 10px 40px rgba(0,0,0,0.55);
+	animation: timerCardIn 0.75s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.timer-card--new {
+	animation: timerCardIn 0.65s cubic-bezier(0.34,1.56,0.64,1) both !important;
+}
+
+.timer-card--removing {
+	animation: timerCardOut 0.4s ease-in both !important;
+	pointer-events: none;
+}
+
+/* ── Card header ────────────────────────────────────────── */
+.timer-card-header {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+	margin-bottom: 20px;
+}
+.timer-card-label {
+	font-size: 1.05rem;
+	font-weight: 900;
+	color: #eef1f6;
+	flex: 1;
+	letter-spacing: -0.01em;
+}
+.timer-card-since {
+	font-size: 0.7rem;
+	color: rgba(0,255,255,0.45);
+	font-weight: 600;
+	white-space: nowrap;
+}
+.timer-delete-btn {
+	flex-shrink: 0;
+	width: 28px; height: 28px;
+	border-radius: 50%;
+	border: 1px solid rgba(255,80,80,0.2);
+	background: rgba(255,80,80,0.06);
+	color: rgba(255,100,100,0.6);
+	font-size: 1.1rem;
+	line-height: 1;
+	cursor: pointer;
+	display: flex; align-items: center; justify-content: center;
+	transition: background .15s, color .15s, border-color .15s;
+}
+.timer-delete-btn:hover {
+	background: rgba(255,80,80,0.2);
+	color: #ff6060;
+	border-color: rgba(255,80,80,0.5);
+}
+
+/* ── Card body ──────────────────────────────────────────── */
+.timer-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* ── Orbiter rows (surrounding totals) ─────────────────── */
+.timer-orbiters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: center;
+}
+
+.timer-total {
+	font-size: 0.76rem;
+	font-weight: 700;
+	padding: 5px 14px;
+	border-radius: 20px;
+	background: rgba(0,255,255,0.06);
+	border: 1px solid rgba(0,255,255,0.18);
+	color: rgba(0,255,255,0.7);
+	letter-spacing: 0.03em;
+	font-variant-numeric: tabular-nums;
+	animation: orbiterIn 0.45s ease both;
+	transition: color .2s;
+}
+.timer-total:hover { color: rgba(0,255,255,0.95); }
+
+/* ── Center passage ─────────────────────────────────────── */
+.timer-passage {
+	background: rgba(0,255,255,0.03);
+	border: 1px solid rgba(0,255,255,0.13);
+	border-radius: 16px;
+	padding: 20px 26px;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 12px;
+	justify-content: center;
+	align-items: baseline;
+	box-shadow: 0 0 30px rgba(0,255,255,0.04) inset;
+	animation: passageGlow 1.6s ease both;
+}
+
+.tp-chunk {
+	font-size: 1.45rem;
+	font-weight: 800;
+	color: #eef1f6;
+	text-shadow: 0 0 22px rgba(0,255,255,0.3);
+	letter-spacing: -0.01em;
+	white-space: nowrap;
+	font-variant-numeric: tabular-nums;
+	animation: chunkIn 0.55s ease both;
+}
+
+/* Live-rebuilt chunks (no animation) */
+.tp-chunk--live {
+	animation: none;
+	opacity: 1;
+}
+
+/* ── Keyframes ──────────────────────────────────────────── */
+@keyframes timerCardIn {
+	0%   {
+		opacity: 0;
+		transform: scale(0.45);
+		filter: blur(14px) brightness(1.8);
+		box-shadow: 0 0 80px rgba(0,255,255,0.45), 0 10px 40px rgba(0,0,0,0.55);
+	}
+	45%  {
+		filter: blur(0) brightness(1.1);
+	}
+	72%  {
+		transform: scale(1.04);
+		box-shadow: 0 0 55px rgba(0,255,255,0.2), 0 10px 40px rgba(0,0,0,0.55);
+	}
+	100% {
+		opacity: 1;
+		transform: scale(1);
+		filter: blur(0) brightness(1);
+		box-shadow: 0 0 50px rgba(0,255,255,0.07), 0 10px 40px rgba(0,0,0,0.55);
+	}
+}
+
+@keyframes timerCardOut {
+	0%   { opacity: 1; transform: scale(1);    filter: blur(0); }
+	100% { opacity: 0; transform: scale(0.45); filter: blur(14px); }
+}
+
+@keyframes chunkIn {
+	0%   { opacity: 0; transform: translateY(9px); text-shadow: 0 0 0 rgba(0,255,255,0); }
+	55%  { text-shadow: 0 0 28px rgba(0,255,255,0.75); }
+	100% { opacity: 1; transform: translateY(0); text-shadow: 0 0 22px rgba(0,255,255,0.3); }
+}
+
+@keyframes orbiterIn {
+	0%   { opacity: 0; transform: translateY(5px); }
+	100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes passageGlow {
+	0%   { box-shadow: 0 0 0   rgba(0,255,255,0)    inset; }
+	35%  { box-shadow: 0 0 40px rgba(0,255,255,0.2) inset; }
+	100% { box-shadow: 0 0 30px rgba(0,255,255,0.04) inset; }
+}

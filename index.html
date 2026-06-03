@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+		<meta name="theme-color" content="#0b0f17">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<title>Timer Tracker</title>
+		<link rel="icon" href="favicon.ico" sizes="any">
+		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+		<link rel="stylesheet" href="https://woahitsjeebus.github.io/JUIL/assets/site.css">
+		<link rel="stylesheet" href="./assets/site.css">
+	</head>
+
+	<body>
+		<!-- ── Infinite draggable grid ──────────────────────────── -->
+		<div id="gridViewport">
+			<div id="gridSurface">
+				<div id="gridCursorGlow"></div>
+				<div id="gridGlow"></div>
+				<div id="gridOrigin"></div>
+				<div id="timerMount"></div>
+			</div>
+		</div>
+
+		<!-- ── Add Timer button ─────────────────────────────────── -->
+		<div id="addTimerBar">
+			<button id="addTimerBtn">+ Add Timer</button>
+		</div>
+
+		<!-- ── Add Timer modal ──────────────────────────────────── -->
+		<div id="addTimerModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+			<div class="modal-box">
+				<h2 id="modalTitle">New Timer</h2>
+				<label>Label
+					<input type="text" id="timerLabelInput" placeholder="e.g. Job Start" autocomplete="off" />
+				</label>
+				<label>Start Date &amp; Time
+					<input type="datetime-local" id="timerStartInput" />
+				</label>
+				<div class="modal-actions">
+					<button id="modalCancelBtn" type="button">Cancel</button>
+					<button id="modalAddBtn" type="button" class="primary">Add Timer</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- ── Floating UI layer (tab bar) ──────────────────────── -->
+		<div id="gridContent">
+			<div class="tabsBar" style="width:100%;">
+				<nav class="tabs">
+					<a class="tabBtn active" data-tab="home" href="./"><span class="tabDot"></span>Home</a>
+					<a class="tabBtn" data-tab="about" href="./pages/about/"><span class="tabDot"></span>About</a>
+				</nav>
+			</div>
+		</div>
+
+		<!-- ── Coordinate readout ──────────────────────────────── -->
+		<div id="coordPill">0, 0</div>
+
+		<script type="module">
+			import { initPage, initGridDrag } from "./assets/site.js"
+			import { initTimers } from "./assets/timers.js"
+			initPage("home")
+			initGridDrag()
+			initTimers()
+		</script>
+	</body>
+</html>

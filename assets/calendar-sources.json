@@ -1,0 +1,12 @@
+{
+	"sources": [
+		{
+			"id": "ny-osc-retirement",
+			"title": "New York State Pension Payment Calendar",
+			"state": "New York",
+			"scope": "State pension payment calendar",
+			"url": "https://www.osc.ny.gov/retirement/retirees/pension-payment-calendar",
+			"active": true
+		}
+	]
+}
