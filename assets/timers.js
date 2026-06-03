@@ -24,6 +24,13 @@ function saveTimers(timers) {
 	localStorage.setItem(LS_KEY, JSON.stringify(timers))
 }
 
+function updateTimerLabel(timers, id, label) {
+	const timer = timers.find(t => t.id === id)
+	if (!timer) return
+	timer.label = label
+	saveTimers(timers)
+}
+
 // ── Time math ─────────────────────────────────────────────────
 function calcTimeSince(startISO) {
 	const now   = new Date()
@@ -102,6 +109,9 @@ function createTimerCard(timer, cardDelay = 0) {
 	// ── Header
 	const header   = el("div", "timer-card-header")
 	const labelEl  = el("span", "timer-card-label", timer.label)
+	labelEl.setAttribute("role", "button")
+	labelEl.setAttribute("tabindex", "0")
+	labelEl.setAttribute("title", "Click to edit title")
 	const sinceEl  = el("span", "timer-card-since", fmtSince(timer.start))
 	const delBtn   = el("button", "timer-delete-btn", "×")
 	delBtn.setAttribute("aria-label", "Remove timer")
@@ -248,6 +258,59 @@ export function initTimers() {
 	// Enter key in label input submits
 	labelInp?.addEventListener("keydown", e => { if (e.key === "Enter") startInp.focus() })
 	startInp?.addEventListener("keydown", e => { if (e.key === "Enter") confirmBtn?.click() })
+
+	// ── Edit title inline (event delegation on mount)
+	function startInlineTitleEdit(labelEl) {
+		const card = labelEl.closest(".timer-card")
+		if (!card || card.querySelector(".timer-title-edit")) return
+
+		const oldValue = labelEl.textContent || ""
+		const input = el("input", "timer-title-edit")
+		input.type = "text"
+		input.value = oldValue
+		input.setAttribute("aria-label", "Edit timer title")
+
+		labelEl.replaceWith(input)
+		input.focus()
+		input.select()
+
+		let done = false
+		const finish = commit => {
+			if (done) return
+			done = true
+			const next = (commit ? input.value.trim() : oldValue) || "Timer"
+			const newLabel = el("span", "timer-card-label", next)
+			newLabel.setAttribute("role", "button")
+			newLabel.setAttribute("tabindex", "0")
+			newLabel.setAttribute("title", "Click to edit title")
+			input.replaceWith(newLabel)
+
+			if (commit && next !== oldValue) {
+				updateTimerLabel(timers, card.dataset.id, next)
+			}
+		}
+
+		input.addEventListener("keydown", e => {
+			if (e.key === "Enter") finish(true)
+			if (e.key === "Escape") finish(false)
+		})
+		input.addEventListener("blur", () => finish(true))
+	}
+
+	mount.addEventListener("click", e => {
+		const labelEl = e.target.closest(".timer-card-label")
+		if (!labelEl) return
+		startInlineTitleEdit(labelEl)
+	})
+
+	mount.addEventListener("keydown", e => {
+		const labelEl = e.target.closest(".timer-card-label")
+		if (!labelEl) return
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault()
+			startInlineTitleEdit(labelEl)
+		}
+	})
 
 	// ── Delete (event delegation on mount)
 	mount.addEventListener("click", e => {
