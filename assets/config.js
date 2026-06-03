@@ -2,7 +2,7 @@
 
 // ── Default timers seeded on first run ────────────────────────
 export const DEFAULT_TIMERS = [
-	{ id: "default", label: "Default Tracker", start: "2026-06-02T08:00:00" },
+	{ id: "last_cigarette", label: "Last Cigarette", start: "2026-06-02T08:00:00" },
 ]
 
 export const JFSC_OAUTH = {
